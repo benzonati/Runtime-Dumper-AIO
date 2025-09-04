@@ -2,10 +2,8 @@
 #include "ProcessManager/Manager.hpp"
 #include "Scanner/Scanner.hpp"
 #include "ExternalOffsets/External.hpp"
-#include "InternalOffsets/Internal.hpp"
-#include "HyperionOffsets/Hyperion.hpp"
-#include "Shuffles/Shuffles.hpp"
 #include <print>
+#include <fstream>
 // made by volxphy
 
 
@@ -27,66 +25,37 @@ int main()
     printf("\n    DUMPED BY VOLXPHY\n*/");
     std::cout << "\n\n\n";
     ProcessManager::SuspendProcess(proc); // stop roblox from encrypting functions !! BE INGAME LIKE "NATURAL DISASTER SURVIVAL" !!
-
-    
-
-
-    printf("\n\n//SHUFFLES\n");
-    ShuffleDump::Shuffle3(proc);
-    ShuffleDump::Shuffle4(proc);
-    ShuffleDump::Shuffle5(proc);
-	//ShuffleDump::Shuffle6(proc);
-    ShuffleDump::Shuffle7(proc);
-    ShuffleDump::Shuffle8(proc);
-    // 9
-
-
-
-
-    
-    InternalDump::DumpPattern(proc);
-    InternalDump::DumpXref(proc);
-    printf("\n\n// INTERNAL OFFSETS\n");
-    for (const auto& addr : ObtainedAddresses) {
-		if (addr.value == 0x0) {
-			printf("inline uintptr_t %s = REBASE(0xDEADBEEFDEADC0DE); // FALED TO DUMP\n", addr.name.c_str());
-			continue;
-		}
-        else {
-            printf("inline uintptr_t %s = REBASE(0x%llX);\n", addr.name.c_str(), Scanner::Rebase(addr.value, proc, "Player"));
-        }
-    }
-
+	
 
     ExternalDump::DumpXternal(proc);
     ExternalDump::DumpEx(proc);
     printf("\n\n// EXTERNAL OFFSETS\n");
+	std::ofstream outputFile("Offsets/offsets.hpp");
+
+	if (outputFile.is_open()) {
+		outputFile << "#pragma once\n\nnamespace Offsets {"
+	}
+    // Check if the file was opened successfully
     for (const auto& addr : ObtainedXAddresses) {
         if (addr.value == 0x0) {
-            printf("inline uintptr_t %s = 0xDEADBEEFDEADC0DE; // FALED TO DUMP\n", addr.name.c_str());
-            continue;
+			if (outputFile.is_open()) {
+		        outputFile << ("  inline uintptr_t %s = 0xDEADBEEFDEADC0DE; // FALED TO DUMP\n", addr.name.c_str());
+		    } else {
+		        std::cout << ("  inline uintptr_t %s = 0xDEADBEEFDEADC0DE; // FALED TO DUMP\n", addr.name.c_str());
+		    }
         }
         else {
-            printf("inline uintptr_t %s = 0x%llX;\n", addr.name.c_str(), addr.value);
+			if (outputFile.is_open()) {
+            	outputFile << ("  inline uintptr_t %s = 0x%llX;\n", addr.name.c_str(), addr.value);
+			}else{
+				std::cout << ("  inline uintptr_t %s = 0x%llX;\n", addr.name.c_str(), addr.value);
+			}
         }
     }
-
-
-
-
-    HyperionDump::DumpHyperion(proc);
-    printf("\n\n// HYPERION OFFSETS\n");
-    for (const auto& addr : ObtainedHAddresses) {
-        if (addr.value == 0x0) {
-            printf("inline uintptr_t %s = 0xDEADBEEFDEADC0DE; // FAILED TO DUMP\n", addr.name.c_str());
-            continue;
-        }
-        else {
-            printf("inline uintptr_t %s = REBASEHYPERION(0x%llX);\n", addr.name.c_str(), Scanner::Rebase(addr.value, proc, "Hyperion"));
-        }
-    }
-
-
+	if (outputFile.is_open()) {
+		outputFile << "}";
+		outputFile.close();
+	}
     std::cin.get();
     TerminateProcess(proc.processhandle, NULL);
     CloseHandle(proc.processhandle);
